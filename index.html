@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon DAP8 - Vacation Analytics Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Embedded stylesheet for Excel HTML calendar files -->
+
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing data...</div>
+        <div class="loading-detail" id="loadingDetail">Please wait...</div>
+    </div>
+
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div class="amazon-logo">
+                <span>amazon</span>
+                <span class="amazon-smile">⌣</span>
+            </div>
+            <div class="app-title">DAP8 Logistics Operations | Vacation Analytics Dashboard</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header-section">
+            <h1>📊 Vacation Analytics Dashboard</h1>
+            <p>Upload your team calendar HTML file to analyze vacation patterns and coverage</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <h2>Upload Team Calendar</h2>
+            <p>Drag & drop your HTML file here or click to browse</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".html,.htm">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+            <div class="file-info" id="fileInfo"></div>
+            <div class="process-info" id="processInfo"></div>
+        </div>
+
+        <div class="filters-section" id="filtersSection">
+            <div class="filters-title">🔍 Filter Data</div>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="deptFilter">Department</label>
+                    <select id="deptFilter" onchange="applyFilters()">
+                        <option value="all">All Departments</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="shiftFilter">Shift</label>
+                    <select id="shiftFilter" onchange="applyFilters()">
+                        <option value="all">All Shifts</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="levelFilter">Job Level</label>
+                    <select id="levelFilter" onchange="applyFilters()">
+                        <option value="all">All Levels</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Absence Types Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="shiftChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Absence Days by Shift</h3>
+                    <div class="chart-container">
+                        <canvas id="levelChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Daily Vacation Coverage</h3>
+                    <div class="chart-container">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Weekly Vacation Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <div class="table-header">
+                    <h3>Employee Vacation Details</h3>
+                    <div class="table-controls">
+                        <input type="text" class="search-box" id="searchBox" placeholder="Search employees..." onkeyup="filterTable()">
+                        <button class="export-btn" onclick="exportToCSV()">📥 Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Employee Name</th>
+                                <th>Shift</th>
+                                <th>Job Level</th>
+                                <th>🏖️ Vacation</th>
+                                <th>⏰ Flextime</th>
+                                <th>👶 Papamonat</th>
+                                <th>📋 Special</th>
+                                <th>🏥 Long Sick</th>
+                                <th>🤒 Short Sick</th>
+                                <th>✈️ Travel</th>
+                                <th>📊 Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
