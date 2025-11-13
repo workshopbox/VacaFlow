@@ -1,5 +1,4 @@
-
-        .xl67 {
+.xl67 {
             background: white;
         }
         .xl68 {
@@ -127,30 +126,58 @@
             padding: 0 20px;
             display: flex;
             align-items: center;
+            justify-content: space-between; /* Ensures logo and title are on opposite ends */
             gap: 30px;
         }
 
-        .amazon-logo {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: -1px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        /* === REMOVED OLD LOGO STYLES === */
+        /* .amazon-logo, .amazon-smile removed */
 
-        .amazon-smile {
+        /* === NEW VACAFLOW LOGO STYLES === */
+        .vacaflow-logo {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: white;
+            flex-shrink: 0; /* Prevents logo from shrinking */
+        }
+        .vacaflow-logo .logo-flow {
             color: var(--amazon-orange);
-            font-size: 28px;
-            transform: scaleX(-1);
+        }
+        /* === END OF NEW LOGO STYLES === */
+
+
+        /* === UPDATED TITLE & NEW CREDITS STYLES === */
+        .app-title-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* Aligns text to the right */
+            gap: 4px;
         }
 
         .app-title {
             font-size: 16px;
             font-weight: 400;
-            padding-left: 20px;
-            border-left: 1px solid #333;
+            color: white;
+            /* Removed padding-left and border-left */
         }
+
+        .app-credits {
+            font-size: 12px;
+            color: #BBBBBB; /* Lighter color for credits */
+        }
+
+        .app-credits a {
+            color: var(--amazon-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .app-credits a:hover {
+            text-decoration: underline;
+            color: #52a8e8;
+        }
+        /* === END OF NEW STYLES === */
+
 
         .container {
             max-width: 1400px;
@@ -328,13 +355,42 @@
         }
 
         .filter-group select:focus {
-            outline: none;
-            border-color: var(--amazon-blue);
-            box-shadow: 0 0 0 3px rgba(20, 110, 180, 0.1);
-        }
+    outline: none;
+    border-color: var(--amazon-blue);
+    box-shadow: 0 0 0 3px rgba(20, 110, 180, 0.1);
+}
 
-        .dashboard {
-            display: none;
+/* === NEW: Plan Filters Grid Styles === */
+.plan-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.plan-filter-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.plan-filter-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+.plan-filter-group input:hover {
+    border-color: var(--amazon-orange);
+}
+/* === End of New Styles === */
+
+
+.dashboard {
+    display: none;
         }
 
         .dashboard.show {
@@ -423,6 +479,7 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             overflow: hidden;
+            margin-bottom: 30px; /* Added margin to separate from new section */
         }
 
         .table-header {
@@ -565,13 +622,19 @@
                 gap: 10px;
             }
 
-            .app-title {
-                padding-left: 0;
-                border-left: none;
+            /* --- UPDATED --- */
+            .app-title-container {
+                align-items: flex-start; /* Align left on mobile */
                 padding-top: 10px;
                 border-top: 1px solid #333;
                 width: 100%;
             }
+
+            .app-title {
+                padding-left: 0;
+                border-left: none;
+            }
+            /* --- END UPDATED --- */
 
             .stats-grid, .charts-grid {
                 grid-template-columns: 1fr;
@@ -600,14 +663,234 @@
             }
         }
 
-        @media print {
-            .upload-section, .filters-section, .table-controls {
-                display: none !important;
-            }
-
-            .stat-card, .chart-card, .table-section {
-                page-break-inside: avoid;
-                border: 1px solid #ddd;
-            }
-        }
+        
     
+/* Uploaded Files Manager */
+.uploaded-files-section {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: #F0F8FF;
+    border: 1px solid var(--amazon-blue);
+    border-radius: 8px;
+}
+
+.uploaded-files-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+
+#uploadedFilesList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.file-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.file-badge:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.file-badge-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.file-badge-icon {
+    font-size: 20px;
+}
+
+.file-badge-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-badge-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.file-badge-stats {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.file-badge-remove {
+    background-color: var(--danger);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.file-badge-remove:hover {
+    background-color: #8B0000;
+    transform: scale(1.05);
+}
+
+.clear-btn {
+    background-color: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.clear-btn:hover {
+    background-color: #8B0000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.clear-btn:active {
+    transform: scale(0.98);
+}
+
+/* === NEW: QUOTE REPORT STYLES === */
+
+.quote-report-section {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px; /* Added margin */
+}
+
+.report-description {
+    padding: 0 25px 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.report-btn {
+    border: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.report-btn.generate {
+    background-color: var(--success);
+    color: white;
+}
+.report-btn.generate:hover {
+    background-color: #045D4C;
+}
+
+/* --- UPDATED: Button class for PNG export --- */
+.report-btn.export-png {
+    background-color: var(--amazon-blue);
+    color: white;
+}
+.report-btn.export-png:hover {
+    background-color: #0F5A94;
+}
+.report-btn.export-png:disabled {
+    background-color: #AAB7B8;
+    cursor: not-allowed;
+}
+
+/* --- NEW: Styles for the report header (to be in screenshot) --- */
+.report-header-info {
+    padding: 20px 25px 15px 25px;
+    background-color: #F7F7F7;
+    border-bottom: 2px solid var(--border-color);
+}
+.report-header-info h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+.report-header-info p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* --- NEW: Styles for Plan vs. Actual in report header --- */
+.report-plan-summary {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+.report-plan-summary h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+.report-plan-summary pre {
+    font-family: 'Amazon Ember', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+/* --- End of new styles --- */
+
+
+#quoteReportTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#quoteReportTable th, 
+#quoteReportTable td {
+    padding: 12px 15px;
+    text-align: left;
+    border: 1px solid var(--border-color); /* Use border for a grid-like report */
+    font-size: 13px;
+}
+
+#quoteReportTable th {
+    background-color: #F7F7F7;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+#quoteReportTable td {
+    text-align: center;
+}
+
+/* Color coding for quote percentages */
+#quoteReportTable .quote-high {
+    background-color: #FFF3CD;
+    color: #856404;
+    font-weight: 700;
+}
+#quoteReportTable .quote-mid {
+    background-color: #E8F5E9;
+    color: #155724;
+}
+
+
+/* === REMOVED: PRINT STYLES === */
+/* All @media print styles have been removed */

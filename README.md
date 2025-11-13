@@ -1,252 +1,189 @@
-# DAP8 Vacation Analytics Dashboard
+VacaFlow - Vacation Analytics Dashboard
 
-## 📊 Complete Absence Management System
+📊 Complete Absence Management & Planning System
 
-Track and analyze all 7 absence types from your Amazon DAP8 logistics calendar.
+Track and analyze all 7 absence types from your Amazon logistics calendar and generate powerful, shareable PNG reports for vacation planning.
 
----
+🚀 Quick Start
 
-## 🚀 Quick Start
+Open index.html in your web browser.
 
-1. **Open `index.html` in your web browser**
-2. **Upload your calendar HTML file** (exported from Excel)
-3. **View comprehensive analytics** across all absence types
+Upload your calendar HTML file(s) (exported from Excel).
 
-That's it! No installation or server required.
+Use Filters to narrow your data by Department, Shift, or Job Level.
 
----
+Enter "Plan %" for the weeks shown.
 
-## 📁 Project Structure
+Generate Report to create a detailed weekly vacation quote table.
 
-```
-dap8_dashboard/
+Export Report (PNG) to download a high-quality, shareable image of your report, complete with a "Plan vs. Actual" summary.
+
+📁 Project Structure
+
+vacaflow_dashboard/
 ├── index.html       # Main HTML structure
 ├── style.css        # All styling and layout
-├── script.js        # Dashboard logic and charts
+├── script.js        # Dashboard logic, charts, and report generation
 └── README.md        # This file
-```
 
----
 
-## 🎯 Features
+🎯 Features
 
-### Tracked Day Types
+Tracked Day Types
 
-| Icon | Type | Color |
-|------|------|-------|
-| 🏖️ | Vacation | Lime |
-| ⏰ | Flextime Day | Purple |
-| 👶 | Papamonat | Magenta |
-| 📋 | Special Leave | Cyan |
-| 🏥 | Long Sick Leave | Red |
-| 🤒 | Short Sick Leave | Brown |
-| ✈️ | Active Travel Time | Light Cyan |
+Icon
 
-### Dashboard Components
+Type
 
-**Stats Cards**
-- Total employees
-- Total absence days
-- Breakdown by each type (with icons)
+Color
 
-**4 Interactive Charts**
-1. Absence Types Distribution (Doughnut)
-2. Absence Days by Shift (Stacked Bar)
-3. Daily Absence Coverage (Stacked Area)
-4. Weekly Distribution (Stacked Bar)
+🏖️
 
-**Employee Table**
-- Detailed breakdown per employee
-- Color-coded columns for each type
-- Sortable and searchable
-- CSV export functionality
+Vacation
 
-**Smart Filters**
-- Filter by Department (DAP8, DAP9, etc.)
-- Filter by Shift (Früh, Nacht, Hybrid, Spät, ORM)
-- Filter by Job Level (JL1, JL3, JL4, etc.)
+Lime
 
----
+⏰
 
-## 📋 How to Use
+Flextime Day
 
-### 1. Prepare Your Calendar File
+Purple
+
+👶
+
+Papamonat
+
+Magenta
+
+📋
+
+Special Leave
+
+Cyan
+
+🏥
+
+Long Sick Leave
+
+Red
+
+🤒
+
+Short Sick Leave
+
+Brown
+
+✈️
+
+Active Travel Time
+
+Light Cyan
+
+Main Dashboard Components
+
+Stats Cards: At-a-glance totals for employees and all 7 absence types.
+
+4 Interactive Charts:
+
+Absence Types Distribution (Doughnut)
+
+Absence Days by Shift (Stacked Bar)
+
+Daily Absence Coverage (Stacked Area)
+
+Weekly Distribution (Stacked Bar)
+
+Employee Table: A sortable and searchable list of all employees with their specific absence counts.
+
+Smart Filters: Filter the entire dashboard by Department, Shift, and Job Level.
+
+Weekly Vacation Quote Report (New!)
+
+Dynamic Plan Inputs: Enter your planned vacation percentage for each week found in the uploaded file.
+
+Detailed Report Table: Generates a table showing Station (Dept + Job Level) vs. Shift for all 14 weeks.
+
+PNG Export: Downloads a high-resolution PNG of the report table.
+
+Plan vs. Actual Summary: The exported PNG includes a professional header with a summary comparing your planned % to the actual calculated % for the filtered group.
+
+📋 How to Use
+
+1. Prepare Your Calendar File
 
 Export your team calendar from Excel as HTML:
-- File → Save As → Web Page (.htm or .html)
-- Keep the stylesheet.css in the same folder (or use embedded styles)
 
-### 2. Upload the File
+File → Save As → Web Page (.htm or .html)
 
-- Drag & drop onto the upload area, OR
-- Click "Choose File" to browse
+2. Upload the File(s)
 
-### 3. Analyze the Data
+Drag & drop one or more HTML files onto the upload area.
 
-The dashboard automatically:
-- Detects all 7 day types based on cell colors
-- Separates Department, Shift, and Job Level
-- Generates charts and statistics
-- Populates the employee table
+The tool automatically aggregates data from all uploaded files.
 
-### 4. Filter and Export
+3. Analyze the Dashboard
 
-- Use dropdowns to filter data
-- Search for specific employees
-- Export filtered data to CSV
+The dashboard updates instantly.
 
----
+Use the "Filter Data" dropdowns to analyze specific groups.
 
-## 🎨 Color Coding
+Search the "Employee Vacation Details" table for individuals.
 
-The application uses your Excel stylesheet colors:
+4. Generate & Export the Quote Report
 
-- **xl68 (lime)** → Vacation
-- **xl70 (purple)** → Flextime Day
-- **xl71 (magenta)** → Papamonat
-- **xl72 (cyan)** → Special Leave
-- **xl73 (red)** → Long Sick Leave
-- **xl74 (brown)** → Short Sick Leave
-- **xl75 (light cyan)** → Active Travel Time
+After filtering, scroll to the "📅 Weekly Plan (%)" section (below filters) and enter your target percentages for the available weeks.
 
----
+Click "Generate Report".
 
-## 🔧 Technical Details
+A detailed table will appear, showing the calculated vacation quote (%) for each Station and Shift.
 
-**Dependencies (loaded from CDN)**
-- Chart.js 4.4.0 - For all charts and graphs
-- XLSX.js 0.18.5 - For Excel file processing
+Click "📥 Export Report (PNG)" to download a clean image of the report, perfect for sharing in emails, wikis, or presentations.
 
-**Browser Compatibility**
-- Chrome/Edge (recommended)
-- Firefox
-- Safari
-- Modern browsers with ES6 support
+🔧 Technical Details
 
-**File Format**
-- Accepts .htm and .html files
-- Must be Excel-exported HTML with color classes
-- Supports standard Excel HTML format
+Dependencies (loaded from CDN)
 
----
+Chart.js (v4.4.0): For all interactive charts.
 
-## 📊 Data Structure
+html2canvas (v1.4.1): For generating high-quality PNG exports of the report.
 
-### Expected HTML Format
+Browser Compatibility
 
-```html
-<table>
-  <tr>
-    <td>Department Column</td>
-    <td>Name Column</td>
-    <td class="xl68">Day 1</td>
-    <td class="xl67">Day 2</td>
-    ...
-  </tr>
-</table>
-```
+Chrome/Edge (recommended)
 
-### Department Column Format
+Firefox
 
-Format: `DAP8 JL1 Früh (DAP8 JL1 Früh)`
+Safari
 
-Extracts:
-- **Department**: First 4 chars (DAP8)
-- **Job Level**: JL followed by number (JL1)
-- **Shift**: Früh, Nacht, Hybrid, Spät, or ORM
+🐛 Troubleshooting
 
-### Name Column Format
+No data showing?
 
-Format: `Frühschicht 1` or `L3 Früh 2`
+Check that your file is in HTML format (.htm or .html).
 
-Used for shift detection when department column is ambiguous.
+Verify your calendar cells are colored using the standard xl68-xl75 classes.
 
----
+Wrong shift/department detected?
 
-## 🎯 Use Cases
+Verify the department column follows the format: DAP8 JL1 Früh
 
-**HR & Management**
-- Monthly absence reports
-- Capacity planning
-- Sick leave analysis
-- Vacation coverage tracking
+Check that employee names contain shift information (e.g., Frühschicht 1)
 
-**Team Leads**
-- Daily coverage overview
-- Week-by-week planning
-- Identify absence patterns
-- Resource allocation
+PNG Export is blank?
 
-**Compliance**
-- Papamonat tracking
-- Sick leave documentation
-- Work-life balance metrics
+Ensure you have clicked "Generate Report" first.
 
----
+If it fails, a simple page refresh and re-upload usually solves it.
 
-## 💡 Tips
+👨‍💻 Development & Credits
 
-**For Best Results**
-- Keep your Excel calendar format consistent
-- Use the standard color coding
-- Include all employee information in the first two columns
-- Export with "Web Page" option (not "Web Page, Filtered")
+This tool was built by:
 
-**Performance**
-- Handles 100+ employees easily
-- Processes files instantly
-- Charts render in real-time
-- Filters update immediately
+@tbadakar (Head Developer)
 
----
+@widowitz (Support)
 
-## 🐛 Troubleshooting
+@ozeitsch (Support)
 
-**No data showing?**
-- Check that your file is HTML format (.htm or .html)
-- Verify cells are colored using the xl68-xl75 classes
-- Make sure the first row contains headers
-
-**Wrong shift/department detected?**
-- Verify the department column follows the format: `DAP8 JL1 Früh`
-- Check that employee names contain shift information
-
-**Charts not loading?**
-- Ensure you have internet connection (for CDN libraries)
-- Try a different browser
-- Check browser console for errors (F12)
-
----
-
-## 📄 License
-
-Internal use for Amazon DAP8 Logistics Operations
-
----
-
-## 👨‍💻 Development
-
-**To modify styles:**
-- Edit `style.css`
-
-**To change functionality:**
-- Edit `script.js`
-
-**To adjust layout:**
-- Edit `index.html`
-
-All files are well-commented for easy customization.
-
----
-
-## 🎉 Credits
-
-Built for Amazon DAP8 Logistics Operations
-Version: 2.0 - All Day Types
+Version: 3.0 ("VacaFlow")
 Last Updated: November 2025
-
----
-
-**Need Help?** Check the browser console (F12) for detailed error messages.
-
-**Questions?** Review the code comments in `script.js` for implementation details.

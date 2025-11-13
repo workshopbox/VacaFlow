@@ -2,6 +2,7 @@ let employeesData = [];
         let filteredData = [];
         let weekDefinitions = [];
         let allCharts = {};
+        let uploadedFiles = []; // Track all uploaded files
         
         // Define all day types based on Excel classes
         const DAY_TYPES = {
@@ -67,45 +68,71 @@ let employeesData = [];
         uploadSection.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadSection.classList.remove('dragover');
-            const files = e.dataTransfer.files;
+            const files = Array.from(e.dataTransfer.files);
             if (files.length > 0) {
-                fileInput.files = files;
-                handleFile(files[0]);
+                handleMultipleFiles(files);
             }
         });
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+                const files = Array.from(e.target.files);
+                handleMultipleFiles(files);
             }
         });
 
-        function handleFile(file) {
-            if (!file.name.match(/\.(htm|html)$/i)) {
-                alert('Please upload an HTML file (.htm or .html)');
+        function handleMultipleFiles(files) {
+            // Filter only HTML files
+            const htmlFiles = files.filter(f => f.name.match(/\.(htm|html)$/i));
+            
+            if (htmlFiles.length === 0) {
+                alert('Please upload HTML files (.htm or .html)');
                 return;
             }
+            
+            if (htmlFiles.length < files.length) {
+                alert(`${files.length - htmlFiles.length} non-HTML file(s) skipped`);
+            }
+            
+            // Process each file
+            processFilesSequentially(htmlFiles);
+        }
 
-            fileInfo.textContent = `Processing: ${file.name}...`;
-            fileInfo.classList.add('show');
-            processInfo.classList.add('show');
+        async function processFilesSequentially(files) {
             document.getElementById('loadingOverlay').classList.add('show');
-            document.getElementById('loadingText').textContent = 'Reading HTML file...';
-            document.getElementById('loadingDetail').textContent = 'Extracting colored cells';
-
-            // Read HTML file as text
-            const reader = new FileReader();
-            reader.onload = async function(e) {
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                document.getElementById('loadingText').textContent = `Processing file ${i + 1} of ${files.length}...`;
+                document.getElementById('loadingDetail').textContent = file.name;
+                
                 try {
-                    const htmlText = e.target.result;
-                    await processHTMLFile(htmlText, file.name);
+                    await handleFile(file);
                 } catch (error) {
-                    alert('Error reading file: ' + error.message);
-                    console.error(error);
-                    document.getElementById('loadingOverlay').classList.remove('show');
+                    console.error(`Error processing ${file.name}:`, error);
+                    alert(`Error processing ${file.name}: ${error.message}`);
                 }
-            };
-            reader.readAsText(file);
+            }
+            
+            document.getElementById('loadingOverlay').classList.remove('show');
+            updateUploadedFilesList();
+        }
+
+        async function handleFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const htmlText = e.target.result;
+                        await processHTMLFile(htmlText, file.name);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
         }
 
         async function processHTMLFile(htmlText, filename) {
@@ -158,22 +185,24 @@ let employeesData = [];
                 // If no weeks found, create default structure
                 if (weekDefinitions.length === 0) {
                     const dayColumns = rows[1]?.querySelectorAll('td').length - 2 || 30;
-                    const daysPerWeek = Math.ceil(dayColumns / 4);
+                    // --- FIX: Ensure at least 7 days per week for 4 weeks if no definition ---
+                    const daysPerWeek = Math.max(7, Math.ceil(dayColumns / 4)); // Use 7 as a minimum
                     for (let i = 0; i < 4; i++) {
+                        const startColIndex = 2 + (i * daysPerWeek);
                         weekDefinitions.push({
-                            week: i + 1,
+                            week: i + 1, // Default to week 1, 2, 3, 4
                             label: `Week ${i + 1}`,
-                            startCol: 2 + (i * daysPerWeek),
-                            endCol: 2 + ((i + 1) * daysPerWeek) - 1
+                            startCol: startColIndex,
+                            endCol: startColIndex + daysPerWeek - 1
                         });
                     }
                 }
 
                 document.getElementById('loadingText').textContent = 'Processing employees...';
                 
-                // Process employee data
-                employeesData = [];
+                // Process employee data - APPEND instead of replacing
                 const dataRows = rows.slice(2); // Skip header rows
+                let newEmployees = 0;
                 
                 for (const row of dataRows) {
                     const cells = Array.from(row.querySelectorAll('td'));
@@ -264,32 +293,42 @@ let employeesData = [];
                         });
                     }
                     
+                    // Add source file information
                     employeesData.push({
                         department: department,
                         name: name,
                         shift: shift,
                         job_level: jobLevel,
-                        days: days
+                        days: days,
+                        sourceFile: filename
                     });
+                    newEmployees++;
                 }
 
-                if (employeesData.length === 0) {
+                if (newEmployees === 0) {
                     throw new Error('No employee data found in file');
                 }
+
+                // Track uploaded file
+                uploadedFiles.push({
+                    name: filename,
+                    employeeCount: newEmployees,
+                    uploadTime: new Date().toLocaleString()
+                });
 
                 filteredData = [...employeesData];
                 
                 // Update UI
                 populateFilters();
+                createPlanInputs(); // <-- NEW: Create "Plan" input boxes
                 updateDashboard();
                 
                 document.getElementById('filtersSection').classList.add('show');
+                document.getElementById('quoteReportSection').style.display = 'block'; // Show the report section
                 document.getElementById('dashboard').classList.add('show');
                 
-                fileInfo.textContent = `✓ Successfully loaded ${employeesData.length} employees`;
-                processInfo.textContent = `📊 Found ${weekDefinitions.length} weeks of data`;
-                
-                document.getElementById('loadingOverlay').classList.remove('show');
+                fileInfo.textContent = `✓ Successfully loaded ${newEmployees} employees from ${filename}`;
+                processInfo.textContent = `📊 Total: ${employeesData.length} employees from ${uploadedFiles.length} file(s)`;
                 
             } catch (error) {
                 console.error('Error processing HTML:', error);
@@ -353,11 +392,53 @@ let employeesData = [];
             });
         }
 
+        /**
+         * NEW: Dynamically creates the "Plan %" input boxes based on found weeks
+         */
+        function createPlanInputs() {
+            const container = document.getElementById('planFiltersContainer');
+            const title = document.getElementById('planFiltersTitle');
+            container.innerHTML = ''; // Clear old inputs
+
+            if (weekDefinitions.length === 0) {
+                title.style.display = 'none';
+                return;
+            }
+
+            title.style.display = 'block';
+
+            // Create an input for each week defined in the *file*
+            weekDefinitions.forEach(week => {
+                const group = document.createElement('div');
+                group.className = 'plan-filter-group';
+                
+                const label = document.createElement('label');
+                label.setAttribute('for', `plan-week-${week.week}`);
+                label.textContent = `${week.label} (%)`; // e.g., "Week 45 (%)"
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `plan-week-${week.week}`;
+                input.placeholder = 'e.g., 10';
+                
+                group.appendChild(label);
+                group.appendChild(input);
+                container.appendChild(group);
+            });
+        }
+
+
         function updateDashboard() {
             const stats = calculateStats();
             updateStatsCards(stats);
             createCharts(stats);
             updateTable();
+            
+            // Clear the quote report when dashboard updates
+            document.getElementById('quoteReportContainer').innerHTML = '';
+            document.getElementById('exportReportPNGBtn').disabled = true; // Updated ID
+            document.getElementById('reportDescription').style.display = 'block';
+
         }
 
         function calculateStats() {
@@ -690,6 +771,7 @@ let employeesData = [];
                 
                 row.innerHTML = `
                     <td><strong>${emp.name}</strong></td>
+                    <td>${emp.department}</td>
                     <td><span class="shift-badge ${shiftClass}">${emp.shift}</span></td>
                     <td><span class="level-badge">${emp.job_level}</span></td>
                     <td style="background-color: ${DAY_TYPES.vacation.color}20;">${counts.vacation || '-'}</td>
@@ -747,3 +829,260 @@ let employeesData = [];
             a.click();
         }
     
+        // Uploaded files management
+        function updateUploadedFilesList() {
+            const section = document.getElementById('uploadedFilesSection');
+            const list = document.getElementById('uploadedFilesList');
+            
+            if (uploadedFiles.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            list.innerHTML = '';
+            
+            uploadedFiles.forEach((file, index) => {
+                const badge = document.createElement('div');
+                badge.className = 'file-badge';
+                badge.innerHTML = `
+                    <div class="file-badge-info">
+                        <div class="file-badge-icon">📄</div>
+                        <div class="file-badge-text">
+                            <div class="file-badge-name">${file.name}</div>
+                            <div class="file-badge-stats">${file.employeeCount} employees • Uploaded ${file.uploadTime}</div>
+                        </div>
+                    </div>
+                    <button class="file-badge-remove" onclick="removeFile(${index})">Remove</button>
+                `;
+                list.appendChild(badge);
+            });
+        }
+        
+        function removeFile(index) {
+            const file = uploadedFiles[index];
+            
+            // Remove employees from this file
+            employeesData = employeesData.filter(emp => emp.sourceFile !== file.name);
+            
+            // Remove file from list
+            uploadedFiles.splice(index, 1);
+            
+            // Update UI
+            filteredData = [...employeesData];
+            updateUploadedFilesList();
+            
+            if (employeesData.length === 0) {
+                // Reset dashboard if no files left
+                document.getElementById('filtersSection').classList.remove('show');
+                document.getElementById('dashboard').classList.remove('show');
+                fileInfo.textContent = '';
+                processInfo.textContent = '';
+            } else {
+                // Update with remaining data
+                populateFilters();
+                updateDashboard();
+                processInfo.textContent = `📊 Total: ${employeesData.length} employees from ${uploadedFiles.length} file(s)`;
+            }
+        }
+        
+        function clearAllFiles() {
+            if (!confirm('This action cannot be undone. Are you sure you want to clear all uploaded files and data?')) {
+                return;
+            }
+            
+            // Reset everything
+            employeesData = [];
+            filteredData = [];
+            uploadedFiles = [];
+            weekDefinitions = [];
+            
+            // Reset UI
+            document.getElementById('filtersSection').classList.remove('show');
+            document.getElementById('quoteReportSection').style.display = 'none'; // Hide report section
+            document.getElementById('dashboard').classList.remove('show');
+            document.getElementById('uploadedFilesSection').style.display = 'none';
+            document.getElementById('planFiltersContainer').innerHTML = '';
+            document.getElementById('planFiltersTitle').style.display = 'none';
+            
+            // Clear file input
+            document.getElementById('fileInput').value = '';
+        }
+
+        // === NEW: VACATION QUOTE REPORT FUNCTIONS ===
+
+        /**
+         * Generates the weekly vacation quote report based on the current filters.
+         */
+        function generateQuoteReport() {
+            if (filteredData.length === 0) {
+                alert('Please upload and process a file first.');
+                return;
+            }
+
+            // 1. Get unique stations and shifts from the *filtered* data
+            const stations = [...new Set(filteredData.map(e => `${e.department} ${e.job_level}`))].sort();
+            const shifts = [...new Set(filteredData.map(e => e.shift))].sort();
+
+            // --- FIX 1: Always use 14 weeks ---
+            const reportWeeks = Array.from({ length: 14 }, (_, i) => i + 1); // [1, 2, ..., 14]
+
+            // 2. Build the table HTML
+            let tableHTML = '<table id="quoteReportTable"><thead><tr><th>Station</th><th>Shift</th>';
+            
+            // Add week headers for all 14 weeks
+            reportWeeks.forEach(wNum => {
+                tableHTML += `<th>Week ${wNum}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            // 3. Loop through each station and shift to calculate quotes
+            for (const station of stations) {
+                for (const shift of shifts) {
+                    
+                    // Find all employees matching this station and shift
+                    const employeesInGroup = filteredData.filter(e => 
+                        (`${e.department} ${e.job_level}` === station) && (e.shift === shift)
+                    );
+
+                    // If no employees match, skip this row
+                    if (employeesInGroup.length === 0) {
+                        continue;
+                    }
+
+                    tableHTML += `<tr><td>${station}</td><td>${shift}</td>`;
+
+                    // 4. Loop through each of the 14 weeks to calculate the quote
+                    for (const weekNum of reportWeeks) {
+                        
+                        // Find if this week number exists in our *parsed* data
+                        const weekDef = weekDefinitions.find(w => w.week === weekNum);
+
+                        let totalVacation = 0;
+                        let totalPossibleDays = 0;
+                        let quote = 0;
+
+                        if (weekDef) {
+                            // Week exists in the file, calculate as normal
+                            const daysInWeek = (weekDef.endCol - weekDef.startCol) + 1;
+                            
+                            employeesInGroup.forEach(emp => {
+                                totalVacation += countDaysByType(emp, 'vacation', weekDef.week);
+                            });
+
+                            // Total possible days = (num employees) * (days in that week, e.g., 7)
+                            totalPossibleDays = employeesInGroup.length * daysInWeek;
+                            
+                            // Calculate quote
+                            quote = (totalPossibleDays === 0) ? 0 : (totalVacation / totalPossibleDays) * 100;
+                        }
+                        // If weekDef is not found, all values remain 0, so quote is 0.
+
+                        // Add cell with color-coding
+                        let cellClass = '';
+                        if (quote > 15) cellClass = 'quote-high';
+                        else if (quote > 0) cellClass = 'quote-mid';
+
+                        tableHTML += `<td class="${cellClass}">${quote.toFixed(1)}%</td>`;
+                    }
+
+                    tableHTML += '</tr>';
+                }
+            }
+
+            tableHTML += '</tbody></table>';
+
+            // --- UPDATED: Add a professional header AND Plan vs. Actual summary ---
+            const now = new Date();
+            const deptValue = document.getElementById('deptFilter').value;
+            const shiftValue = document.getElementById('shiftFilter').value;
+            const levelValue = document.getElementById('levelFilter').value;
+
+            // --- NEW: Build Plan vs. Actual Summary ---
+            let planSummaryHTML = '<div class="report-plan-summary">';
+            planSummaryHTML += '<h3>Plan vs. Actual (Filtered Group)</h3>';
+            planSummaryHTML += '<pre>'; // Use <pre> for better alignment
+
+            // Calculate total actuals for the *filtered* group
+            weekDefinitions.forEach(weekDef => {
+                // 1. Get Plan % from input
+                const planInput = document.getElementById(`plan-week-${weekDef.week}`);
+                const planValue = parseFloat(planInput?.value) || 0;
+
+                // 2. Calculate Actual % for the *entire filtered group*
+                let totalVacation = 0;
+                const daysInWeek = (weekDef.endCol - weekDef.startCol) + 1;
+                const totalPossibleDays = filteredData.length * daysInWeek;
+                
+                filteredData.forEach(emp => {
+                    totalVacation += countDaysByType(emp, 'vacation', weekDef.week);
+                });
+                
+                const actualQuote = (totalPossibleDays === 0) ? 0 : (totalVacation / totalPossibleDays) * 100;
+
+                // 3. Format the line
+                const planText = `Plan: ${planValue.toFixed(1)}%`.padEnd(14);
+                const actualText = `Actual: ${actualQuote.toFixed(1)}%`;
+                planSummaryHTML += `${weekDef.label.padEnd(10)}: ${planText} | ${actualText}\n`;
+            });
+            planSummaryHTML += '</pre></div>';
+            // --- End of Plan vs. Actual ---
+
+            const reportHeaderHTML = `
+                <div class="report-header-info">
+                    <h2>Weekly Vacation Quote Report</h2>
+                    <p><strong>Generated on:</strong> ${now.toLocaleString()}</p>
+                    <p><strong>Filters:</strong> Department=${deptValue}, Shift=${shiftValue}, Level=${levelValue}</p>
+                    
+                    ${planSummaryHTML} <!-- Inject the new summary here -->
+                </div>
+            `;
+            // --- End of header update ---
+
+
+            // 5. Inject the header AND table into the DOM
+            document.getElementById('quoteReportContainer').innerHTML = reportHeaderHTML + tableHTML;
+            document.getElementById('reportDescription').style.display = 'none';
+            document.getElementById('exportReportPNGBtn').disabled = false; // Updated ID
+        }
+
+        /**
+         * --- NEW: Export as PNG using html2canvas ---
+         * Takes a "screenshot" of the report container and downloads it as a PNG.
+         */
+        function exportQuoteReportPNG() {
+            const reportContainer = document.getElementById('quoteReportContainer');
+            if (!reportContainer || !document.getElementById('quoteReportTable')) {
+                alert('Please generate the report first.');
+                return;
+            }
+
+            // Show a temporary loading message
+            const exportBtn = document.getElementById('exportReportPNGBtn');
+            const originalBtnText = exportBtn.innerHTML;
+            exportBtn.innerHTML = 'Processing...';
+            exportBtn.disabled = true;
+
+            html2canvas(reportContainer, { 
+                scale: 2, // Increase resolution for a clearer image
+                useCORS: true 
+            }).then(canvas => {
+                // Create a link to download the image
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL("image/png");
+                a.download = `vacation_quote_report_${new Date().toISOString().split('T')[0]}.png`;
+                a.click();
+
+                // Restore button
+                exportBtn.innerHTML = originalBtnText;
+                exportBtn.disabled = false;
+            }).catch(err => {
+                console.error('Error exporting PNG:', err);
+                alert('An error occurred while exporting the report.');
+                // Restore button
+                exportBtn.innerHTML = originalBtnText;
+                exportBtn.disabled = false;
+            });
+        }
+
+        // === END OF NEW FUNCTIONS ===
