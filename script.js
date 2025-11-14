@@ -7,7 +7,7 @@ let employeesData = [];
         // Define all day types based on Excel classes
         const DAY_TYPES = {
             vacation: {
-                class: 'xl68',
+                class: 'xl69',  // FIXED: xl69 is LIME (vacation), not xl68!
                 color: 'lime',
                 label: 'Vacation',
                 icon: '🏖️'
@@ -264,6 +264,21 @@ let employeesData = [];
                             // Default for managers/leads is Früh
                             shift = 'Früh';
                         }
+                    } else {
+                        // FIXED: For regular employees without "schicht" in name, check department column
+                        const deptLower = deptInfo.toLowerCase();
+                        if (deptLower.includes('nacht')) {
+                            shift = 'Nacht';
+                        } else if (deptLower.includes('hybrid')) {
+                            shift = 'Hybrid';
+                        } else if (deptLower.includes('sp') && deptLower.includes('t')) {
+                            shift = 'Spät';
+                        } else if (deptLower.includes('orm')) {
+                            shift = 'ORM';
+                        } else if (deptLower.includes('fr') && (deptLower.includes('h') || deptLower.includes('ï¿½'))) {
+                            // Früh or its encoding variations
+                            shift = 'Früh';
+                        }
                     }
                     
                     // Clean up name - remove parentheses content
@@ -276,12 +291,18 @@ let employeesData = [];
                         const cellClass = cell.getAttribute('class') || '';
                         const textContent = cell.textContent.trim();
                         
-                        // Detect which day type this is
+                        // FIXED: Check if this is Sunday (SO) - should not count as vacation/absence
+                        const sundayKeywords = ['so', 'sonntag', 'sunday'];
+                        const isSunday = sundayKeywords.some(kw => textContent.toLowerCase() === kw || textContent.toLowerCase().includes(kw));
+                        
+                        // Detect which day type this is (but ignore Sundays)
                         let dayType = null;
-                        for (const [key, config] of Object.entries(DAY_TYPES)) {
-                            if (cellClass.includes(config.class)) {
-                                dayType = key;
-                                break;
+                        if (!isSunday) {
+                            for (const [key, config] of Object.entries(DAY_TYPES)) {
+                                if (cellClass.includes(config.class)) {
+                                    dayType = key;
+                                    break;
+                                }
                             }
                         }
                         
@@ -289,7 +310,8 @@ let employeesData = [];
                             index: i - 2,
                             class: cellClass,
                             dayType: dayType,
-                            text: textContent
+                            text: textContent,
+                            isSunday: isSunday
                         });
                     }
                     
