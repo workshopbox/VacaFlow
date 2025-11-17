@@ -182,20 +182,31 @@ let employeesData = [];
                     }
                 }
 
-                // If no weeks found, create default structure
+                // If no weeks found, create default structure based on ALL available days
                 if (weekDefinitions.length === 0) {
-                    const dayColumns = rows[1]?.querySelectorAll('td').length - 2 || 30;
-                    // --- FIX: Ensure at least 7 days per week for 4 weeks if no definition ---
-                    const daysPerWeek = Math.max(7, Math.ceil(dayColumns / 4)); // Use 7 as a minimum
-                    for (let i = 0; i < 4; i++) {
-                        const startColIndex = 2 + (i * daysPerWeek);
+                    // Count actual day columns (excluding Department and Name columns)
+                    const headerCells = Array.from(rows[0]?.querySelectorAll('td') || []);
+                    const dayColumns = headerCells.length > 2 ? headerCells.length - 2 : 30;
+                    
+                    console.log(`No week headers found. Creating week structure for ${dayColumns} days`);
+                    
+                    // Create 7-day weeks to cover ALL days
+                    const daysPerWeek = 7;
+                    const numberOfWeeks = Math.ceil(dayColumns / daysPerWeek);
+                    
+                    for (let i = 0; i < numberOfWeeks; i++) {
+                        const startColIndex = i * daysPerWeek;
+                        const endColIndex = Math.min(startColIndex + daysPerWeek - 1, dayColumns - 1);
+                        
                         weekDefinitions.push({
-                            week: i + 1, // Default to week 1, 2, 3, 4
+                            week: i + 1,
                             label: `Week ${i + 1}`,
                             startCol: startColIndex,
-                            endCol: startColIndex + daysPerWeek - 1
+                            endCol: endColIndex
                         });
                     }
+                    
+                    console.log(`Created ${numberOfWeeks} weeks covering days 1-${dayColumns}`);
                 }
 
                 document.getElementById('loadingText').textContent = 'Processing employees...';
