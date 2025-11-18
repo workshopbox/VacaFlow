@@ -7,7 +7,7 @@ let employeesData = [];
         // Define all day types based on Excel classes
         const DAY_TYPES = {
             vacation: {
-                class: 'xl69',  // FIXED: xl69 is LIME (vacation), not xl68!
+                class: ['xl68', 'xl69'],  // BOTH xl68 and xl69 can be lime (vacation) depending on calendar format
                 color: 'lime',
                 label: 'Vacation',
                 icon: '🏖️'
@@ -148,55 +148,129 @@ let employeesData = [];
 
                 const rows = Array.from(table.querySelectorAll('tr'));
                 
-                // Find header row with week information
+                // Find header row with month/week information
                 const headerRow = rows[0];
-                const weekCells = Array.from(headerRow.querySelectorAll('td')).filter(cell => 
-                    cell.textContent.toLowerCase().includes('week')
-                );
                 
-                document.getElementById('loadingText').textContent = 'Detecting colored cells...';
+                // Look for month headers (e.g., "DVI1: 01/2026", "02/2026", etc.)
+                const monthHeaders = [];
+                const firstRowCells = Array.from(headerRow.querySelectorAll('td'));
                 
-                // Parse week definitions
-                weekDefinitions = [];
-                let currentCol = 0;
-                
-                for (const row of rows) {
-                    const cells = Array.from(row.querySelectorAll('td'));
-                    if (cells.length > 0 && cells[0].textContent.toLowerCase().includes('week')) {
-                        let colIndex = 2; // Start after Department and Name columns
-                        for (let i = 0; i < cells.length; i++) {
-                            const cellText = cells[i].textContent.trim();
-                            if (cellText.match(/Week \d+/i)) {
-                                const weekNum = parseInt(cellText.match(/\d+/)[0]);
-                                const colspan = parseInt(cells[i].getAttribute('colspan') || '7');
-                                weekDefinitions.push({
-                                    week: weekNum,
-                                    label: cellText,
-                                    startCol: colIndex,
-                                    endCol: colIndex + colspan - 1
-                                });
-                                colIndex += colspan;
-                            }
-                        }
-                        break;
+                let currentColIndex = 0;
+                for (let i = 0; i < firstRowCells.length; i++) {
+                    const cell = firstRowCells[i];
+                    const text = cell.textContent.trim();
+                    const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+                    
+                    // Match patterns like "DVI1: 01/2026" or "01/2026" or "02/2026"
+                    const monthMatch = text.match(/(\d{2})\/(\d{4})/);
+                    if (monthMatch) {
+                        const month = parseInt(monthMatch[1]);
+                        const year = parseInt(monthMatch[2]);
+                        monthHeaders.push({
+                            month: month,
+                            year: year,
+                            startCol: currentColIndex,
+                            colspan: colspan
+                        });
                     }
+                    currentColIndex += colspan;
+                }
+                
+                console.log('Month headers found:', monthHeaders);
+                
+                // Parse day numbers from row 2 to create accurate week mappings
+                const dayHeaderRow = rows[1];
+                const dayHeaderCells = Array.from(dayHeaderRow.querySelectorAll('td'));
+                
+                // Helper function to get ISO week number
+                function getWeekNumber(date) {
+                    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                    const dayNum = d.getUTCDay() || 7;
+                    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                }
+                
+                if (monthHeaders.length > 0) {
+                    // We have month headers - calculate weeks based on actual day numbers
+                    console.log('Processing month headers with actual day numbers...');
+                    
+                    // Parse actual day numbers and their positions
+                    const dayMappings = [];
+                    let colIndex = 0;
+                    
+                    for (let i = 0; i < dayHeaderCells.length; i++) {
+                        const cell = dayHeaderCells[i];
+                        const text = cell.textContent.trim();
+                        const dayNum = parseInt(text);
+                        
+                        if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
+                            dayMappings.push({
+                                col: colIndex,
+                                day: dayNum
+                            });
+                        }
+                        colIndex++;
+                    }
+                    
+                    console.log(`Found ${dayMappings.length} day columns`);
+                    
+                    // Now map days to months and calculate weeks
+                    let monthIndex = 0;
+                    let lastDayNum = 0;
+                    let currentMonth = monthHeaders[0];
+                    
+                    weekDefinitions = [];
+                    
+                    for (const dayMap of dayMappings) {
+                        const dayNum = dayMap.day;
+                        
+                        // Detect month change (day number resets to 1 or goes backwards)
+                        if (dayNum < lastDayNum && monthIndex + 1 < monthHeaders.length) {
+                            monthIndex++;
+                            currentMonth = monthHeaders[monthIndex];
+                            console.log(`Switched to month ${currentMonth.month}/${currentMonth.year} at column ${dayMap.col}`);
+                        }
+                        lastDayNum = dayNum;
+                        
+                        // Calculate date and week
+                        const date = new Date(currentMonth.year, currentMonth.month - 1, dayNum);
+                        const weekNum = getWeekNumber(date);
+                        
+                        // Find or create week
+                        let existingWeek = weekDefinitions.find(w => w.week === weekNum);
+                        
+                        if (!existingWeek) {
+                            weekDefinitions.push({
+                                week: weekNum,
+                                label: `Week ${weekNum}`,
+                                startCol: dayMap.col,
+                                endCol: dayMap.col
+                            });
+                        } else {
+                            existingWeek.endCol = dayMap.col;
+                        }
+                    }
+                    
+                    console.log(`Created ${weekDefinitions.length} weeks from actual day numbers:`, 
+                                weekDefinitions.slice(0, 10).map(w => `Week ${w.week}: cols ${w.startCol}-${w.endCol}`));
                 }
 
-                // If no weeks found, create default structure based on ALL available days
+                // Fallback: If no month headers found, create default structure
                 if (weekDefinitions.length === 0) {
                     // Count actual day columns (excluding Department and Name columns)
-                    const headerCells = Array.from(rows[0]?.querySelectorAll('td') || []);
-                    const dayColumns = headerCells.length > 2 ? headerCells.length - 2 : 30;
+                    const headerCells = Array.from(rows[1]?.querySelectorAll('td') || []);
+                    const dayColumns = headerCells.length - 3; // Exclude first 3 columns (Dept, Name, blank)
                     
-                    console.log(`No week headers found. Creating week structure for ${dayColumns} days`);
+                    console.log(`No month headers found. Creating ${Math.ceil(dayColumns / 7)} weeks for ${dayColumns} days`);
                     
-                    // Create 7-day weeks to cover ALL days
+                    // Create 7-day weeks
                     const daysPerWeek = 7;
                     const numberOfWeeks = Math.ceil(dayColumns / daysPerWeek);
                     
                     for (let i = 0; i < numberOfWeeks; i++) {
-                        const startColIndex = i * daysPerWeek;
-                        const endColIndex = Math.min(startColIndex + daysPerWeek - 1, dayColumns - 1);
+                        const startColIndex = 3 + (i * daysPerWeek); // Start at col 3
+                        const endColIndex = Math.min(startColIndex + daysPerWeek - 1, 3 + dayColumns - 1);
                         
                         weekDefinitions.push({
                             week: i + 1,
@@ -310,7 +384,9 @@ let employeesData = [];
                         let dayType = null;
                         if (!isSunday) {
                             for (const [key, config] of Object.entries(DAY_TYPES)) {
-                                if (cellClass.includes(config.class)) {
+                                // Handle both string and array of classes
+                                const classes = Array.isArray(config.class) ? config.class : [config.class];
+                                if (classes.some(cls => cellClass.includes(cls))) {
                                     dayType = key;
                                     break;
                                 }
