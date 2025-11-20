@@ -1136,7 +1136,7 @@ let employeesData = [];
             });
             planSummaryHTML += '</pre></div>';
             
-            // --- NEW: Add Plan vs. Actual Breakdown by Station ---
+            // --- NEW: Add Plan vs. Actual Summary Table by Station ---
             planSummaryHTML += '<div class="report-plan-summary" style="margin-top: 20px;">';
             planSummaryHTML += '<h3>Plan vs. Actual by Station</h3>';
             
@@ -1144,26 +1144,31 @@ let employeesData = [];
             const uniqueStations = [...new Set(filteredData.map(emp => emp.department))].sort();
             
             if (uniqueStations.length > 1) {
+                // Build summary table
+                planSummaryHTML += `
+                    <table style="width: 100%; max-width: 600px; border-collapse: collapse; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Station</th>
+                                <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Plan (Avg)</th>
+                                <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Actual (Avg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
                 uniqueStations.forEach((station, index) => {
-                    const stationId = `station-${index}`;
-                    
-                    planSummaryHTML += `
-                        <div class="station-accordion" style="margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                            <div class="station-header" onclick="document.getElementById('${stationId}').style.display = document.getElementById('${stationId}').style.display === 'none' ? 'block' : 'none'; this.querySelector('.arrow').textContent = this.querySelector('.arrow').textContent === '▼' ? '▶' : '▼';" 
-                                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 15px; cursor: pointer; font-weight: bold; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                                <span>${station}</span>
-                                <span class="arrow" style="font-size: 12px;">▼</span>
-                            </div>
-                            <div id="${stationId}" style="display: block; padding: 15px; background: #f9f9f9;">
-                                <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">`;
-                    
                     // Filter employees by this station
                     const stationEmployees = filteredData.filter(emp => emp.department === station);
                     
+                    let totalPlanSum = 0;
+                    let totalActualSum = 0;
+                    let weekCount = 0;
+                    
                     weekDefinitions.forEach(weekDef => {
-                        // Get Plan % from input
+                        // Get Plan %
                         const planInput = document.getElementById(`plan-week-${weekDef.week}`);
                         const planValue = parseFloat(planInput?.value) || 0;
+                        totalPlanSum += planValue;
                         
                         // Calculate Actual % for this station
                         let stationVacation = 0;
@@ -1175,17 +1180,25 @@ let employeesData = [];
                         });
                         
                         const stationActual = (stationPossibleDays === 0) ? 0 : (stationVacation / stationPossibleDays) * 100;
-                        
-                        // Format the line
-                        const planText = `Plan: ${planValue.toFixed(1)}%`.padEnd(14);
-                        const actualText = `Actual: ${stationActual.toFixed(1)}%`;
-                        planSummaryHTML += `${weekDef.label.padEnd(10)}: ${planText} | ${actualText}\n`;
+                        totalActualSum += stationActual;
+                        weekCount++;
                     });
                     
-                    planSummaryHTML += `</pre>
-                            </div>
-                        </div>`;
+                    const avgPlan = weekCount > 0 ? (totalPlanSum / weekCount) : 0;
+                    const avgActual = weekCount > 0 ? (totalActualSum / weekCount) : 0;
+                    
+                    const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+                    planSummaryHTML += `
+                        <tr style="background: ${rowColor};">
+                            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${station}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${avgPlan.toFixed(1)}%</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${avgActual.toFixed(1)}%</td>
+                        </tr>`;
                 });
+                
+                planSummaryHTML += `
+                        </tbody>
+                    </table>`;
             } else {
                 planSummaryHTML += '<p style="color: #666; font-style: italic;">Only one station in filtered data.</p>';
             }
