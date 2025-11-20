@@ -1135,6 +1135,63 @@ let employeesData = [];
                 planSummaryHTML += `${weekDef.label.padEnd(10)}: ${planText} | ${actualText}\n`;
             });
             planSummaryHTML += '</pre></div>';
+            
+            // --- NEW: Add Plan vs. Actual Breakdown by Station ---
+            planSummaryHTML += '<div class="report-plan-summary" style="margin-top: 20px;">';
+            planSummaryHTML += '<h3>Plan vs. Actual by Station</h3>';
+            
+            // Get unique stations from filtered data
+            const uniqueStations = [...new Set(filteredData.map(emp => emp.department))].sort();
+            
+            if (uniqueStations.length > 1) {
+                uniqueStations.forEach((station, index) => {
+                    const stationId = `station-${index}`;
+                    
+                    planSummaryHTML += `
+                        <div class="station-accordion" style="margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <div class="station-header" onclick="document.getElementById('${stationId}').style.display = document.getElementById('${stationId}').style.display === 'none' ? 'block' : 'none'; this.querySelector('.arrow').textContent = this.querySelector('.arrow').textContent === '▼' ? '▶' : '▼';" 
+                                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 15px; cursor: pointer; font-weight: bold; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>${station}</span>
+                                <span class="arrow" style="font-size: 12px;">▼</span>
+                            </div>
+                            <div id="${stationId}" style="display: block; padding: 15px; background: #f9f9f9;">
+                                <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">`;
+                    
+                    // Filter employees by this station
+                    const stationEmployees = filteredData.filter(emp => emp.department === station);
+                    
+                    weekDefinitions.forEach(weekDef => {
+                        // Get Plan % from input
+                        const planInput = document.getElementById(`plan-week-${weekDef.week}`);
+                        const planValue = parseFloat(planInput?.value) || 0;
+                        
+                        // Calculate Actual % for this station
+                        let stationVacation = 0;
+                        const daysInWeek = (weekDef.endCol - weekDef.startCol) + 1;
+                        const stationPossibleDays = stationEmployees.length * daysInWeek;
+                        
+                        stationEmployees.forEach(emp => {
+                            stationVacation += countDaysByType(emp, 'vacation', weekDef.week);
+                        });
+                        
+                        const stationActual = (stationPossibleDays === 0) ? 0 : (stationVacation / stationPossibleDays) * 100;
+                        
+                        // Format the line
+                        const planText = `Plan: ${planValue.toFixed(1)}%`.padEnd(14);
+                        const actualText = `Actual: ${stationActual.toFixed(1)}%`;
+                        planSummaryHTML += `${weekDef.label.padEnd(10)}: ${planText} | ${actualText}\n`;
+                    });
+                    
+                    planSummaryHTML += `</pre>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                planSummaryHTML += '<p style="color: #666; font-style: italic;">Only one station in filtered data.</p>';
+            }
+            
+            planSummaryHTML += '</div>';
+            // --- End of Station Breakdown ---
             // --- End of Plan vs. Actual ---
 
             const reportHeaderHTML = `
