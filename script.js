@@ -7,7 +7,7 @@ let employeesData = [];
         // Define all day types based on Excel classes
         const DAY_TYPES = {
             vacation: {
-                class: ['xl68', 'xl69'],  // BOTH xl68 and xl69 can be lime (vacation) depending on calendar format
+                class: ['xl67', 'xl68', 'xl69'],  // xl67, xl68, and xl69 can all be lime (vacation) depending on calendar format
                 color: 'lime',
                 label: 'Vacation',
                 icon: '🏖️'
@@ -140,6 +140,41 @@ let employeesData = [];
                 // Parse HTML
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(htmlText, 'text/html');
+                
+                // --- NEW: Auto-detect vacation class from embedded stylesheet ---
+                console.log('Detecting vacation class from stylesheet...');
+                const styleElements = doc.querySelectorAll('style');
+                let vacationClasses = [];
+                
+                for (const styleEl of styleElements) {
+                    const cssText = styleEl.textContent;
+                    
+                    // Find all classes with lime background
+                    const limeRegex = /\.(xl\d+)\s*\{[^}]*background:\s*lime/gi;
+                    let match;
+                    while ((match = limeRegex.exec(cssText)) !== null) {
+                        vacationClasses.push(match[1]);
+                        console.log(`Found vacation class: ${match[1]}`);
+                    }
+                }
+                
+                // If we found lime classes, update DAY_TYPES
+                if (vacationClasses.length > 0) {
+                    // Keep existing classes and add new ones
+                    const existingClasses = Array.isArray(DAY_TYPES.vacation.class) 
+                        ? DAY_TYPES.vacation.class 
+                        : [DAY_TYPES.vacation.class];
+                    
+                    // Merge and deduplicate
+                    const allClasses = [...new Set([...existingClasses, ...vacationClasses])];
+                    DAY_TYPES.vacation.class = allClasses;
+                    
+                    console.log(`Vacation classes updated: ${allClasses.join(', ')}`);
+                } else {
+                    console.log('No lime classes found in stylesheet, using default classes');
+                }
+                // --- End of stylesheet detection ---
+                
                 const table = doc.querySelector('table');
                 
                 if (!table) {
